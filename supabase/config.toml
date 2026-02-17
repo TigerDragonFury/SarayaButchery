@@ -1,0 +1,46 @@
+project_id = "mpqupbukacjemjhyhupw"
+
+[functions.iiko-create-order]
+verify_jwt = false
+
+[functions.iiko-fetch-menu]
+verify_jwt = false
+
+[functions.iiko-test-order]
+verify_jwt = false
+
+[functions.iiko-status-sync]
+verify_jwt = false
+
+[functions.iiko-delivery-update]
+verify_jwt = false
+
+[functions.iiko-order-failsafe]
+verify_jwt = false
+
+[functions.voice-note-upload]
+verify_jwt = false
+
+[functions.voice-note-url]
+verify_jwt = false
+
+[functions.voice-note-cleanup]
+verify_jwt = false
+
+[functions.push-notification]
+verify_jwt = false
+
+[functions.driver-proximity-alert]
+verify_jwt = false
+
+[functions.weekly-report]
+verify_jwt = false
+
+[functions.daily-report]
+verify_jwt = false
+
+[functions.iiko-fetch-menu-full]
+verify_jwt = false
+
+[functions.ai-admin-assistant]
+verify_jwt = false

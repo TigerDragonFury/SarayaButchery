@@ -1,0 +1,123 @@
+/* Mobile-specific CSS for Capacitor/Native apps */
+
+/* Safe area insets for iOS notch and home indicator */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Apply safe area padding to bottom nav */
+.pb-safe-area-inset-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+}
+
+/* Apply safe area padding to top header */
+.pt-safe-area-inset-top {
+  padding-top: max(env(safe-area-inset-top, 0px), 0.5rem);
+}
+
+/* Prevent text selection on mobile for better UX */
+.mobile-no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Disable overscroll bounce on iOS */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Improve tap targets for mobile */
+@media (max-width: 767px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Capacitor status bar space */
+.capacitor-ios {
+  padding-top: env(safe-area-inset-top, 20px);
+}
+
+/* Smooth transitions for page navigation */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 200ms ease-in, transform 200ms ease-in;
+}
+
+/* RTL support for page transitions */
+[dir="rtl"] .page-transition-enter {
+  transform: translateX(-10px);
+}
+
+[dir="rtl"] .page-transition-exit-active {
+  transform: translateX(10px);
+}
+
+/* Prevent pull-to-refresh on mobile */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Native-like tap highlight */
+* {
+  -webkit-tap-highlight-color: rgba(139, 17, 0, 0.1);
+}
+
+/* Optimize font rendering for mobile */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fix for iOS input zoom */
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Bottom nav safe area background */
+.bottom-nav-safe-area {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+}
+
+/* Keyboard-aware form container */
+.keyboard-aware {
+  transition: padding-bottom 0.25s ease-out;
+}

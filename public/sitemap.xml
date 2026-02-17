@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Homepage -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Shop - Main -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Shop Categories -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop/beef</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop/beef"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop/beef"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop/lamb</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop/lamb"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop/lamb"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop/chicken</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop/chicken"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop/chicken"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop/ready-to-grill</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop/ready-to-grill"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop/ready-to-grill"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop/special-cuts</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop/special-cuts"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop/special-cuts"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/shop/boxes</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/shop/boxes"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/shop/boxes"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Products / Store Page -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/products</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/products"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/products"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Restaurant -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/restaurant</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/restaurant"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/restaurant"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Menu -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/menu</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/menu"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/menu"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Catering Pages -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/catering</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/catering"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/catering"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/catering/corporate</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/catering/wedding</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/catering/events</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/catering/bbq</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Recipes -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/recipes</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/recipes"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/recipes"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/blog"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/blog"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/fresh-meat-guide-uae</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/best-meat-cuts-for-bbq</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/fresh-vs-frozen-meat</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- About -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/about</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/about"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/about"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Contact -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/contact</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/contact"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Offers -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/offers</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Policy Pages -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/terms</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/payment-policy</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/refund-policy</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- SEO Product Category Pages -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/wagyu-beef-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/wagyu-beef-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/wagyu-beef-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/bbq-meat-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/bbq-meat-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/bbq-meat-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/beef-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/beef-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/beef-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/lamb-meat-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/lamb-meat-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/lamb-meat-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/chicken-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/chicken-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/chicken-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- SEO Location Landing Pages -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/butcher-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/butcher-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/butcher-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/fresh-meat-delivery-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/fresh-meat-delivery-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/fresh-meat-delivery-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/halal-butcher-uae</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/halal-butcher-uae"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/halal-butcher-uae"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/butcher-al-reem-island</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/butcher-al-reem-island"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/butcher-al-reem-island"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/butcher-khalifa-city</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/butcher-khalifa-city"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/butcher-khalifa-city"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/butcher-al-raha</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/butcher-al-raha"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/butcher-al-raha"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Ramadan SEO Pages -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/ramadan-meat-offers-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/ramadan-meat-offers-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/ramadan-meat-offers-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/ramadan-bbq-box-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/ramadan-bbq-box-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/ramadan-bbq-box-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/ramadan-wagyu-offer</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/ramadan-wagyu-offer"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/ramadan-wagyu-offer"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/ramadan-meat-delivery-abu-dhabi</loc>
+    <xhtml:link rel="alternate" hreflang="ar-AE" href="https://alsarayabutcheryllc.com/ramadan-meat-delivery-abu-dhabi"/>
+    <xhtml:link rel="alternate" hreflang="en-AE" href="https://alsarayabutcheryllc.com/ramadan-meat-delivery-abu-dhabi"/>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Blog Articles - SEO -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/best-halal-butcher-abu-dhabi</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/where-to-buy-fresh-meat-uae</loc>
+    <lastmod>2026-02-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/how-to-choose-beef-cuts</loc>
+    <lastmod>2026-02-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/wagyu-vs-regular-beef</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/bbq-meat-guide-abu-dhabi</loc>
+    <lastmod>2026-02-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Ramadan Blog Articles -->
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/ramadan-iftar-meat-recipes</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/ramadan-suhoor-protein-guide</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://alsarayabutcheryllc.com/blog/ramadan-bbq-tips-uae</loc>
+    <lastmod>2026-02-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
