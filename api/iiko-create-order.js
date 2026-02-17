@@ -79,6 +79,10 @@ function formatPhone(phoneRaw) {
   return phone;
 }
 
+function isZeroUuid(value) {
+  return String(value || '') === '00000000-0000-0000-0000-000000000000';
+}
+
 function getCompleteBefore(order) {
   if (order.scheduled_date) {
     const timeSlot = (order.scheduled_time_slot || '').split('-')[0] || '12:00';
@@ -194,6 +198,7 @@ async function createIikoOrder(token, order, externalNumber) {
     return {
       success: true,
       iikoOrderId,
+      clientOrderId: orderId,
       iikoOrderNumber,
       correlationId,
       details: responseData,
@@ -265,12 +270,30 @@ export default async function handler(req, res) {
     const iikoResult = await createIikoOrder(token, orderData, tempExternalNumber);
 
     if (!iikoResult.success || !iikoResult.iikoOrderId) {
+      const fallbackId = iikoResult.clientOrderId;
+
+      if (fallbackId && isZeroUuid(iikoResult.iikoOrderId)) {
+        return res.status(200).json({
+          success: true,
+          pending: true,
+          orderNumber: iikoResult.iikoOrderNumber || null,
+          iikoOrderId: fallbackId,
+          clientOrderId: fallbackId,
+          correlationId: iikoResult.correlationId,
+          warning: 'Order accepted but pending processing in iiko',
+        });
+      }
+
       return res.status(400).json({
         success: false,
         error: iikoResult.error || 'Order creation failed',
         details: iikoResult.details,
       });
     }
+
+    const resolvedOrderId = isZeroUuid(iikoResult.iikoOrderId)
+      ? iikoResult.clientOrderId
+      : iikoResult.iikoOrderId;
 
     let finalOrderNumber = iikoResult.iikoOrderNumber;
     if (!finalOrderNumber && iikoResult.iikoOrderId) {
@@ -285,7 +308,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       orderNumber: finalOrderNumber,
-      iikoOrderId: iikoResult.iikoOrderId,
+      iikoOrderId: resolvedOrderId,
+      clientOrderId: iikoResult.clientOrderId,
       iikoOrderNumber: finalOrderNumber,
       correlationId: iikoResult.correlationId,
     });
