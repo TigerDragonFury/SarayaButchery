@@ -1,34 +1,22 @@
-// Vercel Serverless Function - Fetch iiko Menu & Products
-// No authentication required - fetches data directly from iiko API
-
 const IIKO_API_URL = 'https://api-eu.iiko.services';
 const IIKO_ORG_ID = '32d5187a-c03f-4b28-8c7f-901e91dc639c';
 
 async function getIikoToken(apiKey) {
   try {
-    console.log('[iiko] Requesting token...');
-    console.log('[iiko] API URL:', IIKO_API_URL);
-    console.log('[iiko] API Key present:', !!apiKey);
-    
     const response = await fetch(`${IIKO_API_URL}/api/1/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiLogin: apiKey }),
     });
     
-    console.log('[iiko] Token response status:', response.status);
-    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[iiko] Token request failed: ${response.status} - ${errorText}`);
       return null;
     }
     
     const data = await response.json();
-    console.log('[iiko] Token received:', !!data.token);
-    return data.token;
+    return data.token || null;
   } catch (err) {
-    console.error('[iiko] Token error:', err.message, err.stack);
+    console.error('Token error:', err.message);
     return null;
   }
 }
@@ -38,9 +26,6 @@ async function fetchMenuProducts(token, menuId) {
   const groups = [];
 
   try {
-    console.log(`[iiko] Fetching menu ${menuId}...`);
-    console.log('[iiko] Token present:', !!token);
-    
     const resp = await fetch(`${IIKO_API_URL}/api/2/menu/by_id`, {
       method: 'POST',
       headers: {
@@ -58,7 +43,7 @@ async function fetchMenuProducts(token, menuId) {
     if (!resp.ok) {
       const errorText = await resp.text();
       console.error(`[iiko] Menu fetch failed: ${resp.status} - ${errorText}`);
-      return { products, groups, source: 'none' };
+      return { products: [], groups: [], source: 'none' };
     }
 
     const data = await resp.json();
@@ -66,27 +51,27 @@ async function fetchMenuProducts(token, menuId) {
 
     if (data.itemCategories && Array.isArray(data.itemCategories)) {
       data.itemCategories.forEach((category) => {
-        if (category.items && category.items.length > 0) {
+        if (category.items && Array.isArray(category.items) && category.items.length > 0) {
           groups.push({
             id: category.id,
-            name: category.name,
+            name: category.name || '',
           });
 
           category.items.forEach((item) => {
             let price = null;
-            if (item.itemSizes && item.itemSizes.length > 0) {
+            if (item.itemSizes && Array.isArray(item.itemSizes) && item.itemSizes.length > 0) {
               const firstSize = item.itemSizes[0];
-              if (firstSize.prices && firstSize.prices.length > 0) {
+              if (firstSize.prices && Array.isArray(firstSize.prices) && firstSize.prices.length > 0) {
                 price = firstSize.prices[0].price;
               }
             }
 
             products.push({
-              id: item.sku || item.id,
-              name: item.name,
+              id: item.sku || item.id || '',
+              name: item.name || '',
               price: price,
               groupId: category.id,
-              groupName: category.name,
+              groupName: category.name || '',
             });
           });
         }
@@ -97,7 +82,7 @@ async function fetchMenuProducts(token, menuId) {
     return { products, groups, source: 'api2_menu_by_id_itemCategories' };
   } catch (e) {
     console.error('[iiko] Menu fetch error:', e.message);
-    return { products, groups, source: 'none' };
+    return { products: [], groups: [], source: 'none' };
   }
 }
 
@@ -132,7 +117,6 @@ async function fetchExternalMenus(token) {
 }
 
 async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -144,19 +128,16 @@ async function handler(req, res) {
   try {
     console.log(`\n[${new Date().toISOString()}] ${req.method} /api/iiko-fetch-menu-full`);
 
-    // Check if IIKO_API_LOGIN is configured
     const apiKey = process.env.IIKO_API_LOGIN;
     if (!apiKey) {
       console.error('[error] IIKO_API_LOGIN not configured in Vercel');
       return res.status(500).json({
         success: false,
-        error: 'Server misconfigured: IIKO_API_LOGIN not set in Vercel environment',
-        instructions: 'Add IIKO_API_LOGIN environment variable to Vercel project settings'
+        error: 'IIKO_API_LOGIN not configured'
       });
     }
     console.log('[handler] IIKO_API_LOGIN is configured');
 
-    // Get request body
     let body = {};
     if (req.method === 'POST') {
       try {
@@ -170,18 +151,15 @@ async function handler(req, res) {
     const action = body.action || 'list_menus';
     console.log('[handler] Action:', action);
 
-    // Get iiko token
     const token = await getIikoToken(apiKey);
     if (!token) {
       console.error('[error] Failed to get iiko token');
       return res.status(500).json({
         success: false,
-        error: 'Failed to authenticate with iiko API',
-        debug: 'Check IIKO_API_LOGIN value in Vercel'
+        error: 'Failed to authenticate with iiko API'
       });
     }
 
-    // Fetch products from a specific menu
     if (action === 'fetch_menu') {
       const menuId = body.externalMenuId;
       if (!menuId) {
@@ -193,8 +171,8 @@ async function handler(req, res) {
 
       const { products, groups, source } = await fetchMenuProducts(token, menuId);
 
-      return res.status(products.length > 0 ? 200 : 404).json({
-        success: products.length > 0,
+      return res.status(200).json({
+        success: true,
         action: 'fetch_menu',
         externalMenuId: menuId,
         source,
@@ -202,13 +180,9 @@ async function handler(req, res) {
         groups,
         totalProducts: products.length,
         totalGroups: groups.length,
-        message: products.length === 0
-          ? 'No products found in menu categories'
-          : `Found ${products.length} products`,
       });
     }
 
-    // List external menus
     if (action === 'list_menus') {
       const menus = await fetchExternalMenus(token);
 
