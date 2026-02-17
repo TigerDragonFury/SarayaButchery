@@ -70,10 +70,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // @ts-ignore - Deno runtime
-    const apiKey = Deno.env.get('IIKO_API_KEY');
+    const apiKey = Deno.env.get('IIKO_API_LOGIN');
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ success: false, error: 'IIKO_API_KEY not configured' }),
+        JSON.stringify({ success: false, error: 'IIKO_API_LOGIN not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
