@@ -1,20 +1,29 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
+
+// Conditionally import lovable-tagger only in development
+let componentTagger: any = null;
+try {
+  if (process.env.NODE_ENV !== "production") {
+    componentTagger = require("lovable-tagger").componentTagger;
+  }
+} catch {
+  // lovable-tagger not available, skip
+}
 
 // Vite config - uses esbuild for minification (default)
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
     hmr: {
       overlay: false,
     },
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
+    mode === "development" && componentTagger ? componentTagger() : null,
   ].filter(Boolean),
   resolve: {
     alias: {
