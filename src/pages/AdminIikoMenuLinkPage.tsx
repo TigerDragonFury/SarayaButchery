@@ -104,13 +104,17 @@ const AdminIikoMenuLinkPage = () => {
         return;
       }
 
-      const response = await supabase.functions.invoke('iiko-fetch-menu-full', {
-        body: { action: 'list_menus' },
-        headers: { Authorization: `Bearer ${session.access_token}` }
+      const response = await fetch('/api/iiko-fetch-menu-full', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ action: 'list_menus' })
       });
 
-      if (response.error) throw response.error;
-      const result = response.data;
+      if (!response.ok) throw new Error('Failed to fetch menus');
+      const result = await response.json();
 
       if (!result.success) {
         toast.error(result.error || 'Failed to fetch menus');
@@ -147,13 +151,17 @@ const AdminIikoMenuLinkPage = () => {
         return;
       }
 
-      const response = await supabase.functions.invoke('iiko-fetch-menu-full', {
-        body: { action: 'fetch_menu', externalMenuId: menuId },
-        headers: { Authorization: `Bearer ${session.access_token}` }
+      const response = await fetch('/api/iiko-fetch-menu-full', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ action: 'fetch_menu', externalMenuId: menuId })
       });
 
-      if (response.error) throw response.error;
-      const result = response.data;
+      if (!response.ok) throw new Error('Failed to fetch products');
+      const result = await response.json();
 
       if (!result.success) {
         toast.error(result.error || 'Failed');
