@@ -3,20 +3,28 @@ const IIKO_ORG_ID = '32d5187a-c03f-4b28-8c7f-901e91dc639c';
 
 async function getIikoToken(apiKey) {
   try {
+    console.log('[token] Requesting...');
+    
     const response = await fetch(`${IIKO_API_URL}/api/1/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiLogin: apiKey }),
     });
     
+    console.log(`[token] Status: ${response.status}`);
+    
     if (!response.ok) {
+      const text = await response.text();
+      console.error(`[token] FAIL: ${response.status} - ${text}`);
       return null;
     }
     
     const data = await response.json();
-    return data.token || null;
+    const token = data.token || null;
+    console.log(`[token] Got token: ${token ? 'YES' : 'NO'}`);
+    return token;
   } catch (err) {
-    console.error('Token error:', err.message);
+    console.error(`[token] ERROR: ${err.message}`);
     return null;
   }
 }
@@ -26,6 +34,8 @@ async function fetchMenuProducts(token, menuId) {
   const groups = [];
 
   try {
+    console.log(`[fetch] Getting menu ${menuId}...`);
+    
     const resp = await fetch(`${IIKO_API_URL}/api/2/menu/by_id`, {
       method: 'POST',
       headers: {
@@ -38,16 +48,16 @@ async function fetchMenuProducts(token, menuId) {
       }),
     });
 
-    console.log(`[iiko] Menu response status: ${resp.status}`);
+    console.log(`[fetch] Menu response: ${resp.status}`);
 
     if (!resp.ok) {
-      const errorText = await resp.text();
-      console.error(`[iiko] Menu fetch failed: ${resp.status} - ${errorText}`);
+      const text = await resp.text();
+      console.error(`[FAIL] ${resp.status}: ${text}`);
       return { products: [], groups: [], source: 'none' };
     }
 
     const data = await resp.json();
-    console.log('[iiko] Menu data received, categories:', data.itemCategories?.length || 0);
+    console.log(`[fetch] Got data with ${Array.isArray(data.itemCategories) ? data.itemCategories.length : 0} categories`);
 
     if (data.itemCategories && Array.isArray(data.itemCategories)) {
       data.itemCategories.forEach((category) => {
@@ -78,10 +88,10 @@ async function fetchMenuProducts(token, menuId) {
       });
     }
 
-    console.log(`[iiko] Found ${products.length} products in ${groups.length} categories`);
+    console.log(`[fetch] Extracted ${products.length} products in ${groups.length} groups`);
     return { products, groups, source: 'api2_menu_by_id_itemCategories' };
   } catch (e) {
-    console.error('[iiko] Menu fetch error:', e.message);
+    console.error(`[ERROR] Menu fetch: ${e.message}`);
     return { products: [], groups: [], source: 'none' };
   }
 }
