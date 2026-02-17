@@ -9,6 +9,9 @@ interface AdminAuthState {
   userId: string | null;
 }
 
+// TEMPORARY: Disable auth for testing (set to false to enable auth)
+const DISABLE_AUTH = true;
+
 export const useAdminAuth = (requiredRole: 'admin' | 'driver' = 'admin') => {
   const navigate = useNavigate();
   const [state, setState] = useState<AdminAuthState>({
@@ -21,6 +24,17 @@ export const useAdminAuth = (requiredRole: 'admin' | 'driver' = 'admin') => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // TEMPORARY: Bypass auth if disabled
+        if (DISABLE_AUTH) {
+          setState({
+            isLoading: false,
+            isAuthenticated: true,
+            isAdmin: true,
+            userId: 'dev-user',
+          });
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
