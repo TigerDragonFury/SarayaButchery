@@ -1,6 +1,6 @@
-/// <reference lib="deno.window" />
 // iiko POS API - Fetch External Menus & Products (Admin-only)
 // FIXED: Using correct itemCategories response structure
+// @ts-ignore - Deno runtime globals
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -17,7 +17,9 @@ async function authenticateAdmin(req: Request): Promise<boolean> {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return false;
 
+  // @ts-ignore - Deno runtime
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  // @ts-ignore - Deno runtime
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -27,6 +29,7 @@ async function authenticateAdmin(req: Request): Promise<boolean> {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return false;
 
+  // @ts-ignore - Deno runtime
   const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { data: roles } = await supabaseService
     .from('user_roles')
@@ -52,6 +55,7 @@ async function getIikoToken(apiKey: string): Promise<string | null> {
   }
 }
 
+// @ts-ignore - Deno runtime
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -65,6 +69,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // @ts-ignore - Deno runtime
     const apiKey = Deno.env.get('IIKO_API_KEY');
     if (!apiKey) {
       return new Response(
