@@ -98,18 +98,11 @@ const AdminIikoMenuLinkPage = () => {
   const fetchExternalMenus = async () => {
     setLoadingMenus(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error(isRTL ? 'يجب تسجيل الدخول' : 'Must be logged in');
-        return;
-      }
-
       const baseUrl = window.location.origin;
       const response = await fetch(`${baseUrl}/api/iiko-fetch-menu-full`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ action: 'list_menus' })
       });
@@ -146,18 +139,11 @@ const AdminIikoMenuLinkPage = () => {
     setSelectedMenuId(menuId);
     setSelectedMenuName(menuName);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error(isRTL ? 'يجب تسجيل الدخول' : 'Must be logged in');
-        return;
-      }
-
       const baseUrl = window.location.origin;
       const response = await fetch(`${baseUrl}/api/iiko-fetch-menu-full`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ action: 'fetch_menu', externalMenuId: menuId })
       });

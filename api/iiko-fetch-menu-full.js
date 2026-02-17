@@ -1,66 +1,28 @@
 // Vercel Serverless Function - Fetch iiko Menu & Products
-import { createClient } from '@supabase/supabase-js';
+// No authentication required - fetches data directly from iiko API
 
-const IIKO_CONFIG = {
-  organizationId: "32d5187a-c03f-4b28-8c7f-901e91dc639c",
-  baseUrl: "https://api-eu.iiko.services",
-};
-
-async function authenticateAdmin(req) {
-  try {
-    const authHeader = req.headers.authorization;
-    console.log(`[Auth] Authorization header: ${authHeader ? 'present' : 'missing'}`);
-    
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.log('[Auth] No Bearer token');
-      return false;
-    }
-
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-    console.log('[Auth] Supabase URL:', supabaseUrl ? 'set' : 'MISSING');
-    console.log('[Auth] Supabase Key:', supabaseAnonKey ? 'set' : 'MISSING');
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.log('[Auth] Missing Supabase env vars - accepting any auth');
-      return true; // For now, accept requests
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const { data: { user }, error } = await supabase.auth.getUser();
-    console.log('[Auth] Supabase getUser:', user ? `user ${user.id}` : 'null');
-    if (error) console.log('[Auth] Supabase error:', error.message);
-    
-    if (error || !user) {
-      console.log('[Auth] Auth check failed');
-      return false;
-    }
-
-    console.log('[Auth] User authenticated - checking admin role');
-
-    // For now, accept any authenticated user
-    return true;
-  } catch (err) {
-    console.error('[Auth] Exception:', err.message);
-    return false;
-  }
-}
+const IIKO_API_URL = 'https://api-eu.iiko.services';
+const IIKO_ORG_ID = '32d5187a-c03f-4b28-8c7f-901e91dc639c';
 
 async function getIikoToken(apiKey) {
   try {
-    const response = await fetch(`${IIKO_CONFIG.baseUrl}/api/1/access_token`, {
+    console.log('[iiko] Requesting token...');
+    const response = await fetch(`${IIKO_API_URL}/api/1/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiLogin: apiKey }),
     });
-    if (!response.ok) return null;
+    
+    if (!response.ok) {
+      console.log(`[iiko] Token request failed: ${response.status}`);
+      return null;
+    }
+    
     const data = await response.json();
+    console.log('[iiko] Token received');
     return data.token;
-  } catch {
+  } catch (err) {
+    console.error('[iiko] Token error:', err.message);
     return null;
   }
 }
@@ -70,19 +32,24 @@ async function fetchMenuProducts(token, menuId) {
   const groups = [];
 
   try {
-    const resp = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu/by_id`, {
+    console.log(`[iiko] Fetching menu ${menuId}...`);
+    
+    const resp = await fetch(`${IIKO_API_URL}/api/2/menu/by_id`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        organizationIds: [IIKO_CONFIG.organizationId],
+        organizationIds: [IIKO_ORG_ID],
         externalMenuId: menuId,
       }),
     });
 
-    if (!resp.ok) return { products, groups, source: 'none' };
+    if (!resp.ok) {
+      console.log(`[iiko] Menu fetch failed: ${resp.status}`);
+      return { products, groups, source: 'none' };
+    }
 
     const data = await resp.json();
 
@@ -115,10 +82,41 @@ async function fetchMenuProducts(token, menuId) {
       });
     }
 
+    console.log(`[iiko] Found ${products.length} products in ${groups.length} categories`);
     return { products, groups, source: 'api2_menu_by_id_itemCategories' };
   } catch (e) {
-    console.error('Error fetching menu:', e);
+    console.error('[iiko] Menu fetch error:', e.message);
     return { products, groups, source: 'none' };
+  }
+}
+
+async function fetchExternalMenus(token) {
+  try {
+    console.log('[iiko] Fetching external menus...');
+    
+    const resp = await fetch(`${IIKO_API_URL}/api/2/menu`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        organizationIds: [IIKO_ORG_ID],
+      }),
+    });
+
+    if (!resp.ok) {
+      console.log(`[iiko] Menus fetch failed: ${resp.status}`);
+      return [];
+    }
+
+    const data = await resp.json();
+    const menus = data.externalMenus || [];
+    console.log(`[iiko] Found ${menus.length} external menus`);
+    return menus;
+  } catch (e) {
+    console.error('[iiko] Menus fetch error:', e.message);
+    return [];
   }
 }
 
@@ -133,56 +131,50 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Log incoming request
     console.log(`[${new Date().toISOString()}] ${req.method} /api/iiko-fetch-menu-full`);
 
-    // Authenticate admin
-    const isAuth = await authenticateAdmin(req);
-    if (!isAuth) {
-      console.log('[Auth] Authentication failed - returning 401');
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Unauthorized - Authentication failed',
-        debug: {
-          hasAuthHeader: !!req.headers.authorization
-        }
-      });
-    }
-
-    console.log('[Auth] Authentication passed');
-
+    // Check if IIKO_API_LOGIN is configured
     const apiKey = process.env.IIKO_API_LOGIN;
     if (!apiKey) {
-      console.log('[Error] IIKO_API_LOGIN not set in Vercel');
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Server config error: IIKO_API_LOGIN not set in Vercel environment',
-        debug: {
-          env: {
-            IIKO_API_LOGIN: 'NOT SET',
-            IIKO_API_URL: process.env.IIKO_API_URL ? 'set' : 'NOT SET',
-            IIKO_ORG_ID: process.env.IIKO_ORG_ID ? 'set' : 'NOT SET'
-          }
-        }
+      console.error('[error] IIKO_API_LOGIN not configured in Vercel');
+      return res.status(500).json({
+        success: false,
+        error: 'Server misconfigured: IIKO_API_LOGIN not set in Vercel environment',
+        instructions: 'Add IIKO_API_LOGIN environment variable to Vercel project settings'
       });
     }
 
-    const body = req.method === 'POST' ? req.body : {};
+    // Get request body
+    let body = {};
+    if (req.method === 'POST') {
+      try {
+        body = req.body || {};
+      } catch (e) {
+        // Ignore body parsing errors
+      }
+    }
+
     const action = body.action || 'list_menus';
 
-    console.log(`Processing action: ${action}, menuId: ${body.externalMenuId}`);
+    // Get iiko token
+    const token = await getIikoToken(apiKey);
+    if (!token) {
+      console.error('[error] Failed to get iiko token');
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to authenticate with iiko API',
+        debug: 'Check IIKO_API_LOGIN value in Vercel'
+      });
+    }
 
     // Fetch products from a specific menu
     if (action === 'fetch_menu') {
       const menuId = body.externalMenuId;
       if (!menuId) {
-        return res.status(400).json({ success: false, error: 'externalMenuId is required' });
-      }
-
-      const token = await getIikoToken(apiKey);
-      if (!token) {
-        console.log('Failed to get iiko token');
-        return res.status(500).json({ success: false, error: 'Failed to authenticate with iiko' });
+        return res.status(400).json({
+          success: false,
+          error: 'externalMenuId is required'
+        });
       }
 
       const { products, groups, source } = await fetchMenuProducts(token, menuId);
@@ -204,47 +196,26 @@ export default async function handler(req, res) {
 
     // List external menus
     if (action === 'list_menus') {
-      const token = await getIikoToken(apiKey);
-      if (!token) {
-        console.log('Failed to get iiko token');
-        return res.status(500).json({ success: false, error: 'Failed to authenticate with iiko' });
-      }
+      const menus = await fetchExternalMenus(token);
 
-      try {
-        const resp = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            organizationIds: [IIKO_CONFIG.organizationId],
-          }),
-        });
-
-        if (!resp.ok) {
-          console.log(`iiko API error: ${resp.status}`);
-          return res.status(resp.status).json({ success: false, error: 'Failed to fetch menus from iiko' });
-        }
-
-        const data = await resp.json();
-        const menus = data.externalMenus || [];
-
-        return res.status(200).json({
-          success: true,
-          action: 'list_menus',
-          externalMenus: menus,
-          totalMenus: menus.length,
-        });
-      } catch (e) {
-        console.error('Menu fetch error:', e.message);
-        return res.status(500).json({ success: false, error: 'Error fetching menus: ' + e.message });
-      }
+      return res.status(200).json({
+        success: true,
+        action: 'list_menus',
+        externalMenus: menus,
+        totalMenus: menus.length,
+      });
     }
 
-    return res.status(400).json({ success: false, error: 'Unknown action' });
+    return res.status(400).json({
+      success: false,
+      error: 'Unknown action',
+      supportedActions: ['list_menus', 'fetch_menu']
+    });
   } catch (err) {
-    console.error('API Error:', err);
-    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+    console.error('[error] API exception:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Internal server error'
+    });
   }
 }
