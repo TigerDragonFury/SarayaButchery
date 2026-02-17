@@ -145,6 +145,22 @@ const CheckoutPage = () => {
     setIsProcessing(true);
 
     try {
+      const productIds = items.map(item => item.id);
+      let iikoIdMap: Record<string, string | null> = {};
+
+      if (productIds.length > 0) {
+        const { data: iikoRows, error: iikoError } = await supabase
+          .from('products')
+          .select('id, iiko_id')
+          .in('id', productIds);
+
+        if (iikoError) {
+          console.warn('[Checkout] iiko_id lookup failed:', iikoError);
+        } else if (iikoRows) {
+          iikoIdMap = Object.fromEntries(iikoRows.map(row => [row.id, row.iiko_id]));
+        }
+      }
+
       // Prepare order data for iiko
       const orderData = {
         customer_name: formData.name,
@@ -155,6 +171,7 @@ const CheckoutPage = () => {
         delivery_notes: formData.notes || undefined,
         items: items.map(item => ({
           productId: item.id,
+          iiko_id: iikoIdMap[item.id] || null,
           productName: item.name,
           productNameEn: item.nameEn,
           quantity: item.quantity,

@@ -53,20 +53,40 @@ async function getIikoToken(apiLogin) {
   try {
     const response = await httpsRequest(
       `${IIKO_CONFIG.baseUrl}/api/1/access_token`,
+      const mappedItems = (order.items || [])
+        .map(item => ({
+          iikoId: item.iiko_id || item.iikoId || null,
+          quantity: item.quantity,
+          notes: item.customerNotes || '',
+          name: item.productName,
+        }))
+        .filter(item => item.iikoId);
+
+      const unmappedItems = (order.items || [])
+        .filter(item => !(item.iiko_id || item.iikoId))
+        .map(item => `${item.productName} x${item.quantity}${item.unit}`);
       'POST',
-      { apiLogin }
-    );
-
-    if (response.status !== 200 || !response.data?.token) {
-      return { token: null, error: `Token request failed: ${response.status}` };
-    }
-
-    return { token: response.data.token, error: null };
-  } catch (err) {
+      const iikoItems = mappedItems.length > 0
+        ? mappedItems.map(item => ({
+            productId: item.iikoId,
+            type: 'Product',
+            amount: item.quantity || 1,
+            comment: item.notes.slice(0, 255) || undefined,
+          }))
+        : [
+            {
+              productId: IIKO_CONFIG.websiteOrderProductId,
+              type: 'Product',
+              amount: 1,
+              price: order.total,
+              comment: itemsDetails.slice(0, 255),
+            }
+          ];
     return { token: null, error: `Token error: ${err?.message || 'Unknown'}` };
   }
 }
 
+        unmappedItems.length > 0 ? `Unmapped: ${unmappedItems.join(', ')}` : '',
 function formatPhone(phoneRaw) {
   let phone = (phoneRaw || '').replace(/\s+/g, '').replace(/-/g, '');
   if (!phone) {
