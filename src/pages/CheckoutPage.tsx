@@ -220,8 +220,12 @@ const CheckoutPage = () => {
 
       const officialOrderNumber = iikoResult.orderNumber || iikoResult.iikoOrderNumber;
       const iikoOrderId = iikoResult.iikoOrderId;
+      const iikoCorrelationId = iikoResult.correlationId;
 
       console.log('[Checkout] ✓ Order confirmed by iiko:', officialOrderNumber, 'ID:', iikoOrderId);
+      if (iikoCorrelationId) {
+        console.log('[Checkout] iiko correlationId:', iikoCorrelationId);
+      }
 
       const iikoOrder = formatCartForIiko(
         items,
@@ -272,6 +276,7 @@ const CheckoutPage = () => {
         },
         paymentMethod,
         orderNumber: officialOrderNumber,
+        correlationId: iikoCorrelationId,
       }));
 
       // Upload voice note if exists

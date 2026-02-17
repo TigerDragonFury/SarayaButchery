@@ -29,6 +29,7 @@ const OrderSuccessPage = () => {
       notes?: string;
     };
     paymentMethod?: "online" | "cod";
+    correlationId?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -105,6 +106,17 @@ const OrderSuccessPage = () => {
                     ? "هذا الرقم يطابق رقم الطلب في الكاشير - احتفظ به للتتبع والاستلام" 
                     : "This matches the receipt number - keep it for tracking and pickup"}
                 </p>
+              </div>
+            )}
+
+            {whatsappOrder?.correlationId && (
+              <div className="bg-muted/50 rounded-lg p-3 mb-6 text-sm">
+                <p className="text-muted-foreground mb-1">
+                  {isRTL ? "رقم تتبع النظام" : "System Correlation ID"}
+                </p>
+                <span className="font-mono text-xs break-all">
+                  {whatsappOrder.correlationId}
+                </span>
               </div>
             )}
 
