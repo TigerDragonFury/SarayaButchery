@@ -7,22 +7,28 @@ const IIKO_ORG_ID = '32d5187a-c03f-4b28-8c7f-901e91dc639c';
 async function getIikoToken(apiKey) {
   try {
     console.log('[iiko] Requesting token...');
+    console.log('[iiko] API URL:', IIKO_API_URL);
+    console.log('[iiko] API Key present:', !!apiKey);
+    
     const response = await fetch(`${IIKO_API_URL}/api/1/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiLogin: apiKey }),
     });
     
+    console.log('[iiko] Token response status:', response.status);
+    
     if (!response.ok) {
-      console.log(`[iiko] Token request failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[iiko] Token request failed: ${response.status} - ${errorText}`);
       return null;
     }
     
     const data = await response.json();
-    console.log('[iiko] Token received');
+    console.log('[iiko] Token received:', !!data.token);
     return data.token;
   } catch (err) {
-    console.error('[iiko] Token error:', err.message);
+    console.error('[iiko] Token error:', err.message, err.stack);
     return null;
   }
 }
@@ -33,6 +39,7 @@ async function fetchMenuProducts(token, menuId) {
 
   try {
     console.log(`[iiko] Fetching menu ${menuId}...`);
+    console.log('[iiko] Token present:', !!token);
     
     const resp = await fetch(`${IIKO_API_URL}/api/2/menu/by_id`, {
       method: 'POST',
@@ -46,12 +53,16 @@ async function fetchMenuProducts(token, menuId) {
       }),
     });
 
+    console.log(`[iiko] Menu response status: ${resp.status}`);
+
     if (!resp.ok) {
-      console.log(`[iiko] Menu fetch failed: ${resp.status}`);
+      const errorText = await resp.text();
+      console.error(`[iiko] Menu fetch failed: ${resp.status} - ${errorText}`);
       return { products, groups, source: 'none' };
     }
 
     const data = await resp.json();
+    console.log('[iiko] Menu data received, categories:', data.itemCategories?.length || 0);
 
     if (data.itemCategories && Array.isArray(data.itemCategories)) {
       data.itemCategories.forEach((category) => {
@@ -131,7 +142,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log(`[${new Date().toISOString()}] ${req.method} /api/iiko-fetch-menu-full`);
+    console.log(`\n[${new Date().toISOString()}] ${req.method} /api/iiko-fetch-menu-full`);
 
     // Check if IIKO_API_LOGIN is configured
     const apiKey = process.env.IIKO_API_LOGIN;
@@ -143,18 +154,21 @@ export default async function handler(req, res) {
         instructions: 'Add IIKO_API_LOGIN environment variable to Vercel project settings'
       });
     }
+    console.log('[handler] IIKO_API_LOGIN is configured');
 
     // Get request body
     let body = {};
     if (req.method === 'POST') {
       try {
         body = req.body || {};
+        console.log('[handler] Request body:', JSON.stringify(body));
       } catch (e) {
-        // Ignore body parsing errors
+        console.error('[handler] Error parsing body:', e.message);
       }
     }
 
     const action = body.action || 'list_menus';
+    console.log('[handler] Action:', action);
 
     // Get iiko token
     const token = await getIikoToken(apiKey);
