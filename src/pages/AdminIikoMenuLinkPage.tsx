@@ -104,7 +104,8 @@ const AdminIikoMenuLinkPage = () => {
         return;
       }
 
-      const response = await fetch('/api/iiko-fetch-menu-full', {
+      const baseUrl = window.location.origin;
+      const response = await fetch(`${baseUrl}/api/iiko-fetch-menu-full`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,7 +152,8 @@ const AdminIikoMenuLinkPage = () => {
         return;
       }
 
-      const response = await fetch('/api/iiko-fetch-menu-full', {
+      const baseUrl = window.location.origin;
+      const response = await fetch(`${baseUrl}/api/iiko-fetch-menu-full`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
