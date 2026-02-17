@@ -1,28 +1,59 @@
 const IIKO_API_URL = 'https://api-eu.iiko.services';
 const IIKO_ORG_ID = '32d5187a-c03f-4b28-8c7f-901e91dc639c';
 
+import https from 'https';
+import { URL } from 'url';
+
+function httpsRequest(url, method, data = null, authToken = null) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || 443,
+      path: urlObj.pathname + urlObj.search,
+      method: method,
+      headers: { 'Content-Type': 'application/json' }
+    };
+
+    if (authToken) {
+      options.headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(body));
+        } catch (e) {
+          console.error(`[parse error] Invalid JSON from ${method} ${urlObj.pathname}`);
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    if (data) req.write(JSON.stringify(data));
+    req.end();
+  });
+}
+
 async function getIikoToken(apiKey) {
   try {
     console.log('[token] Requesting...');
+    const data = await httpsRequest(
+      `${IIKO_API_URL}/api/1/access_token`,
+      'POST',
+      { apiLogin: apiKey }
+    );
     
-    const response = await fetch(`${IIKO_API_URL}/api/1/access_token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiLogin: apiKey }),
-    });
-    
-    console.log(`[token] Status: ${response.status}`);
-    
-    if (!response.ok) {
-      const text = await response.text();
-      console.error(`[token] FAIL: ${response.status} - ${text}`);
+    if (!data || !data.token) {
+      console.error('[token] No token in response');
       return null;
     }
     
-    const data = await response.json();
-    const token = data.token || null;
-    console.log(`[token] Got token: ${token ? 'YES' : 'NO'}`);
-    return token;
+    console.log('[token] Got token: YES');
+    return data.token;
   } catch (err) {
     console.error(`[token] ERROR: ${err.message}`);
     return null;
@@ -36,28 +67,22 @@ async function fetchMenuProducts(token, menuId) {
   try {
     console.log(`[fetch] Getting menu ${menuId}...`);
     
-    const resp = await fetch(`${IIKO_API_URL}/api/2/menu/by_id`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
+    const data = await httpsRequest(
+      `${IIKO_API_URL}/api/2/menu/by_id`,
+      'POST',
+      {
         organizationIds: [IIKO_ORG_ID],
         externalMenuId: menuId,
-      }),
-    });
+      },
+      token
+    );
 
-    console.log(`[fetch] Menu response: ${resp.status}`);
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error(`[FAIL] ${resp.status}: ${text}`);
+    if (!data) {
+      console.error('[fetch] No data returned');
       return { products: [], groups: [], source: 'none' };
     }
 
-    const data = await resp.json();
-    console.log(`[fetch] Got data with ${Array.isArray(data.itemCategories) ? data.itemCategories.length : 0} categories`);
+    console.log(`[fetch] Got ${data.itemCategories?.length || 0} categories`);
 
     if (data.itemCategories && Array.isArray(data.itemCategories)) {
       data.itemCategories.forEach((category) => {
@@ -100,23 +125,18 @@ async function fetchExternalMenus(token) {
   try {
     console.log('[iiko] Fetching external menus...');
     
-    const resp = await fetch(`${IIKO_API_URL}/api/2/menu`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        organizationIds: [IIKO_ORG_ID],
-      }),
-    });
+    const data = await httpsRequest(
+      `${IIKO_API_URL}/api/2/menu`,
+      'POST',
+      { organizationIds: [IIKO_ORG_ID] },
+      token
+    );
 
-    if (!resp.ok) {
-      console.log(`[iiko] Menus fetch failed: ${resp.status}`);
+    if (!data) {
+      console.log('[iiko] No menus data returned');
       return [];
     }
 
-    const data = await resp.json();
     const menus = data.externalMenus || [];
     console.log(`[iiko] Found ${menus.length} external menus`);
     return menus;
@@ -179,7 +199,11 @@ async function handler(req, res) {
         });
       }
 
-      const { products, groups, source } = await fetchMenuProducts(token, menuId);
+      // Convert to number if it's a string
+      const menuIdNum = typeof menuId === 'string' ? parseInt(menuId, 10) : menuId;
+      console.log(`[handler] Fetching menu ${menuId} (as ${menuIdNum})`);
+      
+      const { products, groups, source } = await fetchMenuProducts(token, menuIdNum);
 
       return res.status(200).json({
         success: true,
