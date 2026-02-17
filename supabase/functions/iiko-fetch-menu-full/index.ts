@@ -1,5 +1,5 @@
-// iiko POS API - Fetch External Menus & Products for Product Linking (Admin-only)
-// Based on successful implementation from AlSaraya project
+// iiko POS API - Fetch External Menus & Products (Admin-only)
+// Enhanced with detailed debugging logs
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -84,138 +84,75 @@ Deno.serve(async (req) => {
     try {
       body = await req.json();
     } catch {
-      // No body = list external menus by default
+      // No body
     }
 
     const action = body.action || 'list_menus';
 
-    // ===== ACTION: List all available external menus =====
-    if (action === 'list_menus') {
-      console.log('[iiko] Fetching list of external menus...');
-      
-      const response = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ 
-          organizationIds: [IIKO_CONFIG.organizationId],
-          externalMenuId: null  // null = list all menus
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('[iiko] /api/2/menu error:', response.status, errText);
-        return new Response(
-          JSON.stringify({ success: false, error: `Failed to fetch menus: ${response.status}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const data = await response.json();
-      const externalMenus = (data.externalMenus || []).map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        itemGroupsCount: (m.itemGroups || []).length,
-        totalItems: (m.itemGroups || []).reduce((sum: number, g: any) => 
-          sum + (g.items?.length || 0), 0),
-      }));
-
-      console.log(`[iiko] Found ${externalMenus.length} external menus`);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          action: 'list_menus',
-          externalMenus,
-          totalMenus: externalMenus.length,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // ===== ACTION: Fetch products from a specific external menu =====
+    // ===== Fetch products from a specific external menu =====
     if (action === 'fetch_menu') {
-      const externalMenuId = body.externalMenuId;
-      if (!externalMenuId) {
+      const menuId = body.externalMenuId;
+      if (!menuId) {
         return new Response(
           JSON.stringify({ success: false, error: 'externalMenuId is required' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log(`[iiko] Fetching menu with ID: ${externalMenuId}`);
+      console.log(`\n[iiko-fetch] === Fetching menu ID: ${menuId} ===`);
       
       let products: any[] = [];
       let groups: any[] = [];
-      let source = 'unknown';
+      let source = 'none';
+      let debugInfo: any = {};
 
-      // Strategy 1: Use /api/2/menu/by_id (structured response)
+      // Strategy 1: /api/2/menu with externalMenuId
+      console.log('[iiko-fetch] Strategy 1: POST /api/2/menu (with externalMenuId)');
       try {
-        console.log('[iiko] Strategy 1: /api/2/menu/by_id');
-        const menuResponse = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu/by_id`, {
+        const resp = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({
             organizationIds: [IIKO_CONFIG.organizationId],
-            externalMenuId: externalMenuId,
+            externalMenuId: menuId,
           }),
         });
 
-        if (menuResponse.ok) {
-          const menuData: any = await menuResponse.json();
+        const text = await resp.text();
+        console.log(`[iiko-fetch] Strategy 1 Response (Status ${resp.status})`);
+        console.log(`[iiko-fetch] Response length: ${text.length} bytes`);
+        console.log(`[iiko-fetch] First 2000 chars: ${text.substring(0, 2000)}`);
 
-          // Handle structure: groups + products with parentGroup links
-          if (menuData.groups && menuData.products) {
-            console.log('[iiko] Strategy 1: Direct groups/products structure');
-            groups = (menuData.groups || []).map((g: any) => ({
-              id: g.id,
-              name: g.name,
-            }));
+        if (resp.ok && text) {
+          const data = JSON.parse(text);
+          debugInfo.strategy1 = {
+            status: resp.status,
+            keys: Object.keys(data),
+            hasExternalMenus: !!data.externalMenus,
+            externalMenusCount: data.externalMenus?.length || 0,
+          };
 
-            products = (menuData.products || [])
-              .map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                price: p.sizePrices?.[0]?.price?.currentPrice ?? p.sizePrices?.[0]?.price ?? null,
-                groupId: p.parentGroup || null,
-                groupName: groups.find(g => g.id === p.parentGroup)?.name || 'Uncategorized',
-              }));
+          if (data.externalMenus && data.externalMenus.length > 0) {
+            const menu = data.externalMenus[0];
+            console.log(`[iiko-fetch] Found external menu. Keys:`, Object.keys(menu));
+            console.log(`[iiko-fetch] Menu structure:`, {
+              id: menu.id,
+              name: menu.name,
+              itemGroupsCount: menu.itemGroups?.length || 0,
+              hasExternalMenuItems: !!menu.items,
+              itemsCount: menu.items?.length || 0,
+            });
 
-            source = 'menu_by_id_v2';
-            console.log(`[iiko] Strategy 1 SUCCESS: ${products.length} products, ${groups.length} groups`);
-          }
-        }
-      } catch (e) {
-        console.warn('[iiko] Strategy 1 exception:', e instanceof Error ? e.message : String(e));
-      }
-
-      // Strategy 2: Use /api/2/menu with externalMenuId
-      if (products.length === 0) {
-        try {
-          console.log('[iiko] Strategy 2: /api/2/menu with externalMenuId');
-          const menuResponse = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({
-              organizationIds: [IIKO_CONFIG.organizationId],
-              externalMenuId: externalMenuId,
-            }),
-          });
-
-          if (menuResponse.ok) {
-            const menuData: any = await menuResponse.json();
-
-            // Handle structure: externalMenus array with itemGroups
-            if (menuData.externalMenus && menuData.externalMenus.length > 0) {
-              const menu = menuData.externalMenus[0];
-              const itemGroups = menu.itemGroups || [];
-
-              groups = itemGroups.map((ig: any) => ({
+            // Try itemGroups
+            if (menu.itemGroups && menu.itemGroups.length > 0) {
+              console.log(`[iiko-fetch] Using itemGroups structure (${menu.itemGroups.length} groups)`);
+              
+              groups = menu.itemGroups.map((ig: any) => ({
                 id: ig.id,
                 name: ig.name,
               }));
 
-              products = itemGroups.flatMap((ig: any) =>
+              products = menu.itemGroups.flatMap((ig: any) =>
                 (ig.items || []).map((item: any) => ({
                   id: item.itemId || item.id,
                   name: item.name,
@@ -225,29 +162,107 @@ Deno.serve(async (req) => {
                 }))
               );
 
-              source = 'menu_v2_external_menus';
-              console.log(`[iiko] Strategy 2 SUCCESS: ${products.length} products, ${groups.length} groups`);
+              source = 'api2_menu_external_menus_itemgroups';
+              console.log(`[iiko-fetch] ✓ Strategy 1 SUCCESS: ${products.length} products, ${groups.length} groups`);
+            }
+            // Try items directly
+            else if (menu.items && menu.items.length > 0) {
+              console.log(`[iiko-fetch] Using items array (${menu.items.length} items)`);
+              products = menu.items.map((item: any) => ({
+                id: item.itemId || item.id,
+                name: item.name,
+                price: item.itemSizes?.[0]?.prices?.[0]?.price ?? null,
+                groupId: null,
+                groupName: 'Uncategorized',
+              }));
+              groups = [];
+              source = 'api2_menu_external_menus_items';
+              console.log(`[iiko-fetch] ✓ Strategy 1 SUCCESS: ${products.length} products`);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[iiko-fetch] Strategy 1 exception:', e instanceof Error ? e.message : String(e));
+        debugInfo.strategy1Error = e instanceof Error ? e.message : String(e);
+      }
+
+      // Strategy 2: /api/2/menu/by_id
+      if (products.length === 0) {
+        console.log('\n[iiko-fetch] Strategy 2: POST /api/2/menu/by_id');
+        try {
+          const resp = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu/by_id`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              organizationIds: [IIKO_CONFIG.organizationId],
+              externalMenuId: menuId,
+            }),
+          });
+
+          const text = await resp.text();
+          console.log(`[iiko-fetch] Strategy 2 Response (Status ${resp.status}), length: ${text.length}`);
+          console.log(`[iiko-fetch] First 1500 chars: ${text.substring(0, 1500)}`);
+
+          if (resp.ok && text) {
+            const data = JSON.parse(text);
+            debugInfo.strategy2 = {
+              status: resp.status,
+              keys: Object.keys(data),
+              hasGroups: !!data.groups,
+              hasProducts: !!data.products,
+              groupsCount: data.groups?.length || 0,
+              productsCount: data.products?.length || 0,
+            };
+
+            if (data.groups && data.products && data.products.length > 0) {
+              console.log(`[iiko-fetch] Using groups/products structure`);
+              groups = data.groups.map((g: any) => ({
+                id: g.id,
+                name: g.name,
+              }));
+
+              products = data.products.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                price: p.sizePrices?.[0]?.price?.currentPrice ?? null,
+                groupId: p.parentGroup || null,
+                groupName: groups.find((g: any) => g.id === p.parentGroup)?.name || 'Uncategorized',
+              }));
+
+              source = 'api2_menu_by_id';
+              console.log(`[iiko-fetch] ✓ Strategy 2 SUCCESS: ${products.length} products, ${groups.length} groups`);
             }
           }
         } catch (e) {
-          console.warn('[iiko] Strategy 2 exception:', e instanceof Error ? e.message : String(e));
+          console.error('[iiko-fetch] Strategy 2 exception:', e instanceof Error ? e.message : String(e));
+          debugInfo.strategy2Error = e instanceof Error ? e.message : String(e);
         }
       }
 
-      // Strategy 3: Fallback to nomenclature API (all organization products)
+      // Strategy 3: /api/1/nomenclature (fallback - ALL organization products)
       if (products.length === 0) {
+        console.log('\n[iiko-fetch] Strategy 3: POST /api/1/nomenclature (fallback)');
         try {
-          console.log('[iiko] Strategy 3: /api/1/nomenclature fallback');
-          const nomResponse = await fetch(`${IIKO_CONFIG.baseUrl}/api/1/nomenclature`, {
+          const resp = await fetch(`${IIKO_CONFIG.baseUrl}/api/1/nomenclature`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ organizationId: IIKO_CONFIG.organizationId }),
           });
 
-          if (nomResponse.ok) {
-            const nomData: any = await nomResponse.json();
-            const allGroups = nomData.groups || [];
-            const allProducts = nomData.products || [];
+          const text = await resp.text();
+          console.log(`[iiko-fetch] Strategy 3 Response (Status ${resp.status}), length: ${text.length}`);
+
+          if (resp.ok && text) {
+            const data = JSON.parse(text);
+            debugInfo.strategy3 = {
+              status: resp.status,
+              keys: Object.keys(data),
+              groupsCount: data.groups?.length || 0,
+              productsCount: data.products?.length || 0,
+            };
+
+            const allGroups = data.groups || [];
+            const allProducts = data.products || [];
 
             groups = allGroups
               .filter((g: any) => !g.isDeleted)
@@ -263,30 +278,38 @@ Deno.serve(async (req) => {
                 name: p.name,
                 price: p.sizePrices?.[0]?.price?.currentPrice ?? null,
                 groupId: p.parentGroup || null,
-                groupName: groups.find(g => g.id === p.parentGroup)?.name || 'Uncategorized',
+                groupName: groups.find((g: any) => g.id === p.parentGroup)?.name || 'Uncategorized',
               }));
 
-            source = 'nomenclature_v1_fallback';
-            console.log(`[iiko] Strategy 3 SUCCESS: ${products.length} products`);
+            source = 'api1_nomenclature_fallback';
+            console.log(`[iiko-fetch] ✓ Strategy 3 SUCCESS: ${products.length} products (from all organization)`);
           }
         } catch (e) {
-          console.warn('[iiko] Strategy 3 exception:', e instanceof Error ? e.message : String(e));
+          console.error('[iiko-fetch] Strategy 3 exception:', e instanceof Error ? e.message : String(e));
+          debugInfo.strategy3Error = e instanceof Error ? e.message : String(e);
         }
       }
+
+      console.log(`\n[iiko-fetch] === Final Result ===`);
+      console.log(`[iiko-fetch] Products: ${products.length}`);
+      console.log(`[iiko-fetch] Groups: ${groups.length}`);
+      console.log(`[iiko-fetch] Source: ${source}`);
+      console.log(`[iiko-fetch] Debug Info:`, JSON.stringify(debugInfo));
 
       return new Response(
         JSON.stringify({ 
           success: products.length > 0,
           action: 'fetch_menu',
+          externalMenuId: menuId,
           source,
-          externalMenuId,
-          products, 
+          products,
           groups,
           totalProducts: products.length,
           totalGroups: groups.length,
+          debugInfo: debugInfo,
           message: products.length === 0 
-            ? `No products found for menu ${externalMenuId}. Check Supabase logs.` 
-            : `Found ${products.length} products in ${groups.length} categories`,
+            ? `❌ No products found. Check function logs for details.` 
+            : `✓ Found ${products.length} products`,
         }),
         { 
           status: products.length > 0 ? 200 : 404,
@@ -295,13 +318,49 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ===== List available external menus =====
+    console.log('[iiko-fetch] === Listing external menus ===');
+    const response = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ 
+        organizationIds: [IIKO_CONFIG.organizationId],
+        externalMenuId: null
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('[iiko-fetch] Failed to fetch menus:', response.status, errText);
+      return new Response(
+        JSON.stringify({ success: false, error: `iiko API error: ${response.status}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const data = await response.json();
+    const externalMenus = (data.externalMenus || []).map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      itemGroupsCount: (m.itemGroups || []).length,
+      totalItems: (m.itemGroups || []).reduce((sum: number, g: any) => 
+        sum + (g.items?.length || 0), 0),
+    }));
+
+    console.log(`[iiko-fetch] Found ${externalMenus.length} external menus`);
+
     return new Response(
-      JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        action: 'list_menus',
+        externalMenus,
+        totalMenus: externalMenus.length,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (err) {
-    console.error('[iiko] Error:', err);
+    console.error('[iiko-fetch] Error:', err);
     return new Response(
       JSON.stringify({ success: false, error: err instanceof Error ? err.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
