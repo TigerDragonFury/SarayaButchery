@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
-          organizationId: IIKO_CONFIG.organizationId 
+          organizationIds: [IIKO_CONFIG.organizationId]  // Use array format for better compatibility
         }),
       });
 
@@ -111,11 +111,24 @@ Deno.serve(async (req) => {
       const data = await response.json();
       console.log('External menus response:', JSON.stringify(data).substring(0, 500));
 
-      // data.externalMenus is an array of { id, name }
-      const externalMenus = (data.externalMenus || []).map((m: any) => ({
-        id: m.id,
-        name: m.name,
-      }));
+      // Extract menus - handle both externalMenus array and direct menu structure
+      let externalMenus: any[] = [];
+      
+      if (data.externalMenus && Array.isArray(data.externalMenus)) {
+        externalMenus = data.externalMenus.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+        }));
+      } else if (data.id && data.name) {
+        // Single menu response
+        externalMenus = [{
+          id: data.id,
+          name: data.name,
+          categoriesCount: data.itemCategories?.length || 0,
+        }];
+      }
+
+      console.log('Extracted menus:', externalMenus.length);
 
       return new Response(
         JSON.stringify({ 
@@ -178,12 +191,13 @@ Deno.serve(async (req) => {
       // Strategy 2: Try /api/2/menu to get full menu data (includes items)
       if (products.length === 0) {
         try {
-          console.log('Strategy 2: /api/2/menu (full response)');
+          console.log('Strategy 2: /api/2/menu with externalMenuId:', externalMenuId);
           const menuResponse = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
               organizationId: IIKO_CONFIG.organizationId,
+              externalMenuId: externalMenuId,  // Filter by specific menu
             }),
           });
 
@@ -196,23 +210,29 @@ Deno.serve(async (req) => {
             console.log('Strategy 2 raw (first 1500 chars):', rawStr.substring(0, 1500));
             
             // Check various possible structures
-            if (menuData.itemCategories) {
+            if (menuData.itemCategories && menuData.itemCategories.length > 0) {
               for (const cat of menuData.itemCategories) {
                 groups.push({ id: cat.id, name: cat.name });
                 for (const item of (cat.items || [])) {
                   products.push({
                     id: item.itemId || item.id,
                     name: item.name,
+                    code: item.code || null,
                     price: item.itemSizes?.[0]?.prices?.[0]?.price ?? item.price ?? null,
                     groupId: cat.id,
                     groupName: cat.name,
+                    description: item.description || null,
                   });
                 }
               }
               source = 'menu_v2_full';
+              console.log('Strategy 2 SUCCESS: Found', products.length, 'products in', groups.length, 'groups');
+            } else {
+              console.warn('Strategy 2: No itemCategories in response');
             }
           } else {
-            console.warn('Strategy 2 failed:', menuResponse.status);
+            const errText = await menuResponse.text();
+            console.warn('Strategy 2 failed:', menuResponse.status, errText.substring(0, 300));
           }
         } catch (e) {
           console.warn('Strategy 2 exception:', e instanceof Error ? e.message : e);
@@ -254,14 +274,72 @@ Deno.serve(async (req) => {
             .map((g: any) => ({ id: g.id, name: g.name }));
 
           source = 'nomenclature_v1';
+          console.log('Strategy 3 SUCCESS: Found', products.length, 'products');
         } else {
           const errText = await nomResponse.text();
-          console.error('Strategy 3 error:', nomResponse.status, errText.substring(0, 300));
-          return new Response(
-            JSON.stringify({ success: false, error: `All iiko APIs returned 0 products` }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          console.warn('Strategy 3 error:', nomResponse.status, errText.substring(0, 300));
         }
+      }
+
+      // Strategy 4: Try organizing with productCategories if available
+      if (products.length === 0) {
+        console.log('Strategy 4: Try /api/2/menu to fetch all categories and items');
+        try {
+          const menuResponse = await fetch(`${IIKO_CONFIG.baseUrl}/api/2/menu`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              organizationIds: [IIKO_CONFIG.organizationId],
+            }),
+          });
+
+          if (menuResponse.ok) {
+            const menuData = await menuResponse.json();
+            console.log('Strategy 4 response, checking structure...');
+            
+            // Try to find products in various possible structures
+            const itemCategories = menuData.itemCategories || menuData.items || menuData.categories || [];
+            
+            if (Array.isArray(itemCategories) && itemCategories.length > 0) {
+              for (const cat of itemCategories) {
+                groups.push({ 
+                  id: cat.id || cat.itemCategoryId, 
+                  name: cat.name || cat.itemCategoryName 
+                });
+                
+                const items = cat.items || cat.products || [];
+                for (const item of items) {
+                  products.push({
+                    id: item.itemId || item.id || item.productId,
+                    name: item.name || item.itemName,
+                    code: item.code || null,
+                    price: item.itemSizes?.[0]?.prices?.[0]?.price ?? item.price ?? null,
+                    groupId: cat.id || cat.itemCategoryId,
+                    groupName: cat.name || cat.itemCategoryName,
+                    description: item.description || null,
+                  });
+                }
+              }
+              source = 'menu_v2_all_menus';
+              console.log('Strategy 4 SUCCESS: Found', products.length, 'products');
+            }
+          }
+        } catch (e) {
+          console.warn('Strategy 4 exception:', e instanceof Error ? e.message : e);
+        }
+      }
+
+      // If still no products, return error with debugging info
+      if (products.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `No products found for menu: ${externalMenuId}. All API strategies failed. Check Supabase logs for details.`,
+            externalMenuId,
+            strategies_tried: 4,
+          }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       return new Response(
