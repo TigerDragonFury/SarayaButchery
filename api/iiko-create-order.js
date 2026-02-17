@@ -1,5 +1,6 @@
 import https from 'https';
 import { URL } from 'url';
+import crypto from 'crypto';
 
 const IIKO_CONFIG = {
   organizationId: '32d5187a-c03f-4b28-8c7f-901e91dc639c',
@@ -78,9 +79,24 @@ function formatPhone(phoneRaw) {
   return phone;
 }
 
+function getCompleteBefore(order) {
+  if (order.scheduled_date) {
+    const timeSlot = (order.scheduled_time_slot || '').split('-')[0] || '12:00';
+    const [hourStr, minuteStr] = timeSlot.split(':');
+    const date = new Date(`${order.scheduled_date}T00:00:00`);
+    date.setHours(parseInt(hourStr || '12', 10), parseInt(minuteStr || '0', 10), 0, 0);
+    return date.toISOString();
+  }
+
+  const fallback = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  return fallback.toISOString();
+}
+
 async function createIikoOrder(token, order, externalNumber) {
   try {
     const phone = formatPhone(order.customer_phone);
+    const orderId = crypto.randomUUID();
+    const completeBefore = getCompleteBefore(order);
     const itemsDetails = (order.items || []).map((item, index) => {
       const notes = item.customerNotes ? ` [${item.customerNotes}]` : '';
       return `${index + 1}. ${item.productName} x${item.quantity}${item.unit} @ ${item.pricePerUnit} AED${notes}`;
@@ -116,8 +132,12 @@ async function createIikoOrder(token, order, externalNumber) {
       organizationId: IIKO_CONFIG.organizationId,
       terminalGroupId: IIKO_CONFIG.terminalId,
       order: {
+        id: orderId,
+        date: new Date().toISOString(),
+        completeBefore: completeBefore,
         orderTypeId: orderTypeId,
         externalNumber: externalNumber,
+        sourceKey: 'website',
         phone: phone,
         comment: orderComment.slice(0, 1000),
         customer: {
