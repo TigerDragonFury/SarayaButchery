@@ -134,7 +134,13 @@ const determineUnit = (unit?: string, category?: string): 'kg' | 'piece' | 'box'
 
 // Create order in Supabase database with normalized order_items
 export const createOrderInDatabase = async (
-  order: IikoOrder
+  order: IikoOrder,
+  iikoInfo?: {
+    iikoOrderId?: string;
+    iikoOrderNumber?: string;
+    status?: IikoOrder['status'];
+    iikoSynced?: boolean;
+  }
 ): Promise<{ success: boolean; orderNumber?: string; orderId?: string; error?: string }> => {
   try {
     // Generate order number client-side since trigger-generated values can't be retrieved
@@ -143,6 +149,9 @@ export const createOrderInDatabase = async (
     const orderId = crypto.randomUUID();
     
     // 1. Create the order first
+    const orderStatus = iikoInfo?.status || order.status;
+    const iikoSynced = iikoInfo?.iikoSynced ?? order.iikoSynced;
+
     const { error: orderError } = await supabase
       .from('orders' as any)
       .insert({
@@ -150,7 +159,7 @@ export const createOrderInDatabase = async (
         customer_name: order.customer.name,
         customer_phone: order.customer.phone,
         customer_email: order.customer.email || null,
-        status: order.status,
+        status: orderStatus,
         items: order.items as any, // Keep JSONB for backward compatibility
         subtotal: order.subtotal,
         delivery_fee: order.deliveryFee,
@@ -161,7 +170,9 @@ export const createOrderInDatabase = async (
         delivery_city: order.customer.city,
         delivery_notes: order.customer.deliveryNotes || null,
         source: order.source,
-        iiko_synced: false,
+        iiko_synced: iikoSynced,
+        iiko_order_id: iikoInfo?.iikoOrderId || null,
+        iiko_order_number: iikoInfo?.iikoOrderNumber || null,
         order_number: orderNumber,
         // New pickup/delivery scheduling fields
         order_type: order.customer.orderType || 'delivery',

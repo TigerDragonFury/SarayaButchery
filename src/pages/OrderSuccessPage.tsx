@@ -1,17 +1,47 @@
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle, Home, ShoppingBag, Phone, Copy } from "lucide-react";
+import { CheckCircle, Home, ShoppingBag, Phone, Copy, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import PageLayout from "@/components/layout/PageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { useStoreSettings, getWhatsAppUrl } from "@/hooks/useStoreSettings";
+import { openWhatsAppOrder } from "@/lib/whatsapp-order";
 
 const OrderSuccessPage = () => {
   const { t, isRTL } = useLanguage();
   const { settings } = useStoreSettings();
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get('order');
+  const [whatsappOrder, setWhatsAppOrder] = useState<{
+    items: any[];
+    subtotal: number;
+    deliveryFee: number;
+    total: number;
+    totalWeight: number;
+    customerInfo?: {
+      name?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      city?: string;
+      notes?: string;
+    };
+    paymentMethod?: "online" | "cod";
+  } | null>(null);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem('lastOrderWhatsApp');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setWhatsAppOrder(parsed);
+      } catch (err) {
+        console.warn('[OrderSuccess] Failed to parse WhatsApp payload');
+      }
+    }
+  }, []);
 
   const copyOrderNumber = () => {
     if (orderNumber) {
@@ -21,6 +51,24 @@ const OrderSuccessPage = () => {
         description: isRTL ? "تم نسخ رقم الطلب" : "Order number copied to clipboard",
       });
     }
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!whatsappOrder) {
+      return;
+    }
+
+    const existingNotes = whatsappOrder.customerInfo?.notes;
+    const orderNote = orderNumber ? `${isRTL ? 'رقم الطلب' : 'Order'}: ${orderNumber}` : '';
+    const combinedNotes = [existingNotes, orderNote].filter(Boolean).join(' | ');
+
+    openWhatsAppOrder({
+      ...whatsappOrder,
+      customerInfo: {
+        ...whatsappOrder.customerInfo,
+        notes: combinedNotes || undefined,
+      },
+    }, isRTL);
   };
 
   return (
@@ -93,14 +141,26 @@ const OrderSuccessPage = () => {
 
             <div className="mt-8 pt-6 border-t">
               <p className="text-sm text-muted-foreground mb-3">{t("orderSuccess.needHelp")}</p>
-              <Button
-                variant="ghost"
-                className="gap-2 text-green-600 hover:text-green-700"
-                onClick={() => window.open(getWhatsAppUrl(settings.contact), "_blank")}
-              >
-                <Phone className="w-4 h-4" />
-                {t("orderSuccess.contactUs")}
-              </Button>
+              <div className="flex flex-col gap-2">
+                {whatsappOrder && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+                    onClick={handleShareWhatsApp}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    {isRTL ? "ارسال الطلب عبر واتساب" : "Send order via WhatsApp"}
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  className="gap-2 text-green-600 hover:text-green-700"
+                  onClick={() => window.open(getWhatsAppUrl(settings.contact), "_blank")}
+                >
+                  <Phone className="w-4 h-4" />
+                  {t("orderSuccess.contactUs")}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

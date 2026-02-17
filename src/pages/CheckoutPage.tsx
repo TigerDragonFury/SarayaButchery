@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CreditCard, Banknote, ArrowLeft, ArrowRight, CheckCircle, MapPin, User, MessageSquare, Loader2, Truck, Mic, Store, Calendar, Clock } from "lucide-react";
+import { CreditCard, Banknote, ArrowLeft, ArrowRight, CheckCircle, MapPin, User, Loader2, Truck, Mic, Store, Calendar, Clock } from "lucide-react";
 import { format, addDays, startOfDay, isToday } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePixel } from "@/contexts/PixelContext";
 import { toast } from "@/hooks/use-toast";
-import { openWhatsAppOrder } from "@/lib/whatsapp-order";
 import { formatCartForIiko, createOrderInDatabase } from "@/lib/iiko-order";
 import { supabase } from "@/integrations/supabase/client";
 import VoiceNoteRecorder from "@/components/shared/VoiceNoteRecorder";
@@ -177,32 +176,24 @@ const CheckoutPage = () => {
       };
 
       console.log('[Checkout] Sending order to iiko POS...');
-      
-      // Send order to iiko FIRST and get official order number
-      const { data: iikoResult, error: iikoError } = await supabase.functions.invoke('iiko-create-order', {
-        body: { 
+
+      const baseUrl = window.location.origin;
+      const iikoResponse = await fetch(`${baseUrl}/api/iiko-create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           order_data: orderData,
           idempotency_key: idempotencyKey,
-        }
+        }),
       });
 
-      if (iikoError) {
-        console.error('[Checkout] iiko error:', iikoError);
-        toast({
-          title: isRTL ? "خطأ في النظام" : "System Error",
-          description: isRTL 
-            ? "تعذر الاتصال بنظام الكاشير. يرجى المحاولة مرة أخرى." 
-            : "Could not connect to POS system. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const iikoResult = await iikoResponse.json();
 
-      if (!iikoResult?.success) {
+      if (!iikoResponse.ok || !iikoResult?.success) {
         console.error('[Checkout] iiko order failed:', iikoResult);
         toast({
           title: isRTL ? "تعذر تأكيد الطلب" : "Order Failed",
-          description: iikoResult?.error || (isRTL 
+          description: iikoResult?.error || (isRTL
             ? "تعذر تأكيد الطلب. يرجى المحاولة مرة أخرى."
             : "Could not confirm order. Please try again."),
           variant: "destructive",
@@ -210,11 +201,61 @@ const CheckoutPage = () => {
         return;
       }
 
-      // Get the official order number from iiko
       const officialOrderNumber = iikoResult.orderNumber || iikoResult.iikoOrderNumber;
-      const orderId = iikoResult.orderId;
+      const iikoOrderId = iikoResult.iikoOrderId;
 
-      console.log('[Checkout] ✓ Order confirmed by iiko:', officialOrderNumber, 'ID:', orderId);
+      console.log('[Checkout] ✓ Order confirmed by iiko:', officialOrderNumber, 'ID:', iikoOrderId);
+
+      const iikoOrder = formatCartForIiko(
+        items,
+        subtotal,
+        calculatedDeliveryFee,
+        calculatedTotal,
+        totalWeight,
+        {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email || undefined,
+          address: orderType === "pickup" ? "Pickup from store" : formData.address,
+          city: formData.city,
+          deliveryNotes: formData.notes || undefined,
+          orderType: orderType,
+          scheduledDate: scheduledDate ? format(scheduledDate, 'yyyy-MM-dd') : undefined,
+          scheduledTimeSlot: scheduledTimeSlot || undefined,
+          branchName: orderType === "pickup" ? "Abu Dhabi Main Branch" : undefined,
+        },
+        paymentMethod
+      );
+
+      iikoOrder.status = 'confirmed';
+      iikoOrder.iikoSynced = true;
+
+      const { success: dbSuccess, orderId: dbOrderId } = await createOrderInDatabase(iikoOrder, {
+        iikoOrderId: iikoOrderId,
+        iikoOrderNumber: officialOrderNumber,
+        status: 'confirmed',
+        iikoSynced: true,
+      });
+
+      const orderId = dbSuccess ? dbOrderId : iikoOrderId;
+
+      sessionStorage.setItem('lastOrderWhatsApp', JSON.stringify({
+        items,
+        subtotal,
+        deliveryFee: calculatedDeliveryFee,
+        total: calculatedTotal,
+        totalWeight,
+        customerInfo: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          city: formData.city,
+          notes: formData.notes,
+        },
+        paymentMethod,
+        orderNumber: officialOrderNumber,
+      }));
 
       // Upload voice note if exists
       if (orderVoiceNote && orderId) {
@@ -828,36 +869,6 @@ const CheckoutPage = () => {
                     </p>
                   )}
 
-                  {/* WhatsApp Alternative */}
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-2">{t("checkout.orOrderVia")}</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full gap-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-                      onClick={() => {
-                        openWhatsAppOrder({
-                          items,
-                          subtotal,
-                          deliveryFee,
-                          total,
-                          totalWeight,
-                          customerInfo: {
-                            name: formData.name,
-                            phone: formData.phone,
-                            email: formData.email,
-                            address: formData.address,
-                            city: formData.city,
-                            notes: formData.notes
-                          },
-                          paymentMethod
-                        }, isRTL);
-                      }}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      {t("checkout.orderWhatsApp")}
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             </div>
