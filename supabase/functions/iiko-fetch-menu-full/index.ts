@@ -1,3 +1,4 @@
+/// <reference lib="deno.window" />
 // iiko POS API - Fetch External Menus & Products (Admin-only)
 // FIXED: Using correct itemCategories response structure
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -51,7 +52,7 @@ async function getIikoToken(apiKey: string): Promise<string | null> {
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
